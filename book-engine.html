@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Book Engine — Spec Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F2E7; --ink:#18140E; --ink-soft:#68604F; --line:#D9D0BA;
+    --rust:#B23A22; --gold:#8C6A22; --card:#FFFFFF;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#17140F; --ink:#EFE9D8; --ink-soft:#A79C82; --line:#3A3324;
+      --rust:#DD6142; --gold:#C7A24C; --card:#211C14;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#17140F; --ink:#EFE9D8; --ink-soft:#A79C82; --line:#3A3324;
+    --rust:#DD6142; --gold:#C7A24C; --card:#211C14;
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+  *{box-sizing:border-box;}
+  body{margin:0; min-height:100%; background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif; line-height:1.5;}
+  .wrap{max-width:760px; margin:0 auto; padding:40px 20px 70px;}
+  h1{font-family:'Zilla Slab',serif; font-weight:700; font-size:clamp(2.1rem,7vw,3.2rem); margin:0 0 6px; line-height:1.02;}
+  h1 em{color:var(--rust); font-style:italic; font-weight:500;}
+  .lede{color:var(--ink-soft); max-width:52ch; margin:0 0 30px; font-size:1.02rem;}
+  .progress-row{display:flex; align-items:center; gap:12px; margin-bottom:34px;}
+  .progress-track{flex:1; height:6px; background:var(--line); overflow:hidden;}
+  .progress-fill{height:100%; background:var(--rust); width:0%; transition:width .2s;}
+  .progress-label{font-size:0.82rem; color:var(--ink-soft); white-space:nowrap;}
+  .specs{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:44px;}
+  .spec{background:var(--card); padding:16px 14px;}
+  .spec .num{font-family:'Zilla Slab',serif; font-weight:700; font-size:1.5rem; color:var(--gold);}
+  .spec .lbl{font-size:0.78rem; color:var(--ink-soft); margin-top:2px;}
+  h2.section-head{font-family:'Zilla Slab',serif; font-size:0.95rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid var(--line); padding-bottom:8px; margin:0 0 22px;}
+  .phase{margin-bottom:30px;}
+  .phase-top{display:flex; align-items:baseline; gap:12px; margin-bottom:4px;}
+  .phase-no{font-family:'Zilla Slab',serif; font-weight:700; font-size:1.3rem; color:var(--rust); min-width:28px;}
+  .phase-name{font-family:'Zilla Slab',serif; font-weight:700; font-size:1.15rem;}
+  .phase-hours{margin-left:auto; font-size:0.82rem; color:var(--ink-soft); white-space:nowrap;}
+  .phase-note{color:var(--ink-soft); font-size:0.92rem; margin:0 0 12px 40px; max-width:56ch;}
+  ul.check{list-style:none; margin:0 0 0 40px; padding:0;}
+  @media (max-width:480px){
+    .phase-note{margin-left:24px;}
+    ul.check{margin-left:24px;}
+    .question-box{margin-left:24px !important;}
+  }
+  .question-box{margin:0 0 14px 40px; max-width:56ch;}
+  .question-box label{display:block; font-size:0.78rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;}
+  .question-box textarea{width:100%; background:var(--card); border:1px solid var(--line); color:var(--ink); font-family:'Inter',sans-serif; font-size:0.95rem; padding:10px 12px; resize:vertical; min-height:44px;}
+  .jump-btn{background:none; border:1px solid var(--line); color:var(--ink-soft); font-family:'Inter',sans-serif; font-size:0.8rem; padding:6px 12px; cursor:pointer; white-space:nowrap;}
+  .jump-btn:hover{border-color:var(--rust); color:var(--rust);}
+  .phase.current .phase-name{color:var(--rust);}
+  .reset-link{background:none; border:none; color:var(--ink-soft); font-size:0.8rem; text-decoration:underline; cursor:pointer; padding:0; font-family:'Inter',sans-serif;}
+  ul.check li{display:flex; align-items:flex-start; gap:10px; padding:6px 0; border-bottom:1px dashed var(--line);}
+  ul.check li:last-child{border-bottom:none;}
+  ul.check input[type=checkbox]{width:18px; height:18px; margin-top:2px; accent-color:var(--rust); flex-shrink:0; cursor:pointer;}
+  ul.check label{cursor:pointer; flex:1;}
+  ul.check li.done label{color:var(--ink-soft); text-decoration:line-through;}
+  footer{margin-top:40px; color:var(--ink-soft); font-size:0.85rem; border-top:1px solid var(--line); padding-top:18px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>How to Write <em>Book Three</em></h1>
+  <p class="lede">You don't need to know the book yet. Mine yourself for material first — the strongest idea wins by Phase 2.</p>
+
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 0 done</div>
+    <button class="jump-btn" id="jumpBtn" onclick="jumpToCurrent()">Jump to current phase</button>
+  </div>
+
+  <div class="specs">
+    <div class="spec"><div class="num">35–50k</div><div class="lbl">target words</div></div>
+    <div class="spec"><div class="num">150–220</div><div class="lbl">total hours</div></div>
+    <div class="spec"><div class="num">6–12</div><div class="lbl">months, part-time</div></div>
+    <div class="spec"><div class="num">10–15</div><div class="lbl">chapters</div></div>
+  </div>
+
+  <h2 class="section-head">The checklist — tap to mark done</h2>
+  <div id="phases"></div>
+
+  <footer>
+    Become a person who has written a book. That's the first objective — everything else follows.
+    <div style="margin-top:10px;"><button class="reset-link" onclick="resetChecklist()">Reset checklist</button></div>
+  </footer>
+</div>
+
+<script>
+const PHASES = [
+  ["00","Build the machine","2 hrs","",
+    ["Create the folder structure: Raw Ideas, Research, Draft, Revisions, Images, Final, Publishing",
+     "Create one document: BOOK — RAW MATERIAL",
+     "Answer: what have I spent years thinking about?",
+     "Answer: what have I learned the hard way?",
+     "Answer: what do people ask me about?",
+     "Answer: what pisses me off about how people think about art?",
+     "Answer: what do I obsess over?",
+     "Answer: what would I happily research for 100 hours?",
+     "Answer: what did I believe 10 years ago that I don't believe now?",
+     "Answer: what questions don't I have answers to?"]],
+  ["01","Generate the material","15–25 hrs","3 sessions/week, 60–90 min, for 2–4 weeks.",
+    ["Pick one question per session",
+     "Write for 45–60 minutes, no editing",
+     "Save anything interesting in the last 10 minutes",
+     "Reach 10,000–15,000 words of raw material without trying to write a book"]],
+  ["02","Find the book hiding inside it","5–8 hrs","Stop writing. Start reading.",
+    ["Read everything you wrote",
+     "Highlight ideas, stories, questions, original observations, and bullshit",
+     "Dump highlights into categories",
+     "Name the pattern that emerges",
+     "Answer: what is this book actually about? (the central question, not the subject)"],
+    true],
+  ["03","Build the skeleton","5–10 hrs","10–15 chapters. Don't write them yet.",
+    ["Draft a title for every chapter",
+     "Give every chapter a question",
+     "Give every chapter a main idea",
+     "Give every chapter a story or example",
+     "Give every chapter a conclusion"]],
+  ["04","Draft the motherfucker","60–100 hrs","~700–1,000 words/session, 3x/week ≈ 4 months to 42,000 words.",
+    ["Reread the previous paragraph before each session (5 min)",
+     "Write for 55 minutes straight",
+     "Leave a next-session marker (15 min)",
+     "Don't edit — mark contradictions [FIX LATER] and keep moving"]],
+  ["05","First complete manuscript","2–4 hrs","Type THE END, then stop.",
+    ["Finish the full draft",
+     "Do not start editing immediately",
+     "Walk away for at least one week",
+     "Go paint, ride, make music — anything else"]],
+  ["06","Structural edit","15–25 hrs","This is where it becomes a book.",
+    ["Read the entire manuscript straight through",
+     "Ask: does this belong? is this chapter necessary?",
+     "Ask: is the argument clear? where does it repeat or get boring?",
+     "Move, delete, combine, or create chapters"]],
+  ["07","Line edit","20–35 hrs","Make every sentence earn its existence.",
+    ["Cut repetition and weak openings",
+     "Cut unnecessary explanations and vague statements",
+     "Cut clichés and overcomplicated sentences",
+     "Replace telling with demonstrating"]],
+  ["08","Add the visual language","10–30 hrs","Let a drawing do what a paragraph can't.",
+    ["Choose which ideas get a drawing, diagram, or photo",
+     "Source or create the visuals",
+     "Place each visual next to the idea it demonstrates",
+     "Add marginalia or visual breakdowns where useful"]],
+  ["09","Beta readers","5–10 hrs","3–5 readers. Listen without defending.",
+    ["Pick 3–5 readers",
+     "Ask where they got bored",
+     "Ask what they wanted more of, and what didn't make sense",
+     "Ask what they remember and what felt strongest",
+     "Look for patterns across readers, not single opinions"]],
+  ["10","Final revision","15–25 hrs","Your ears catch what your eyes miss.",
+    ["Apply the useful feedback",
+     "Read the whole manuscript aloud",
+     "Fix what you hear"]],
+  ["11","Production","10–20 hrs","Then it's a book.",
+    ["Typography and page layout",
+     "Cover design",
+     "Table of contents, copyright page, acknowledgments, author bio",
+     "ISBN",
+     "Ebook and print formatting, proof copy"]]
+];
+
+const store = {
+  get(k,d){ try{const v=localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const doneMap = store.get('be_checklist', {});
+let firstUnfinishedPhase = null;
+
+function render(){
+  const container = document.getElementById('phases');
+  container.innerHTML = '';
+  let total=0, done=0;
+  firstUnfinishedPhase = null;
+  PHASES.forEach((p, pi)=>{
+    const [no, name, hours, note, items, hasQuestion] = p;
+    const wrap = document.createElement('div');
+    wrap.className='phase';
+    wrap.id = 'phase-'+pi;
+    const ul = document.createElement('ul');
+    ul.className='check';
+    let phaseDone = 0;
+    items.forEach((text, ii)=>{
+      const key = pi+'-'+ii;
+      const isDone = !!doneMap[key];
+      total++; if(isDone){ done++; phaseDone++; }
+      const li = document.createElement('li');
+      if(isDone) li.classList.add('done');
+      const id = 'c'+key;
+      li.innerHTML = `<input type="checkbox" id="${id}" ${isDone?'checked':''}><label for="${id}">${text}</label>`;
+      li.querySelector('input').addEventListener('change', (e)=>{
+        doneMap[key] = e.target.checked;
+        store.set('be_checklist', doneMap);
+        render();
+      });
+      ul.appendChild(li);
+    });
+    if(firstUnfinishedPhase===null && phaseDone < items.length) firstUnfinishedPhase = pi;
+    wrap.innerHTML = `
+      <div class="phase-top">
+        <span class="phase-no">${no}</span>
+        <span class="phase-name">${name}</span>
+        <span class="phase-hours">${hours}</span>
+      </div>
+      ${note ? `<p class="phase-note">${note}</p>` : ''}
+    `;
+    wrap.appendChild(ul);
+    if(hasQuestion){
+      const qbox = document.createElement('div');
+      qbox.className = 'question-box';
+      qbox.innerHTML = `<label>The central question</label><textarea id="centralQuestion" placeholder="What is this book actually about?">${store.get('be_central_question','')}</textarea>`;
+      wrap.appendChild(qbox);
+      qbox.querySelector('textarea').addEventListener('input', (e)=> store.set('be_central_question', e.target.value));
+    }
+    container.appendChild(wrap);
+  });
+  document.getElementById('progressFill').style.width = (total? done/total*100:0).toFixed(1)+'%';
+  document.getElementById('progressLabel').textContent = `${done} / ${total} done`;
+  document.getElementById('jumpBtn').style.display = firstUnfinishedPhase===null ? 'none' : '';
+}
+function jumpToCurrent(){
+  if(firstUnfinishedPhase===null) return;
+  document.getElementById('phase-'+firstUnfinishedPhase).scrollIntoView({behavior:'smooth', block:'start'});
+}
+function resetChecklist(){
+  if(!confirm('Reset the whole checklist? This clears every checked item and the central question.')) return;
+  for(const k in doneMap) delete doneMap[k];
+  store.set('be_checklist', doneMap);
+  store.set('be_central_question', '');
+  render();
+}
+render();
+</script>
+</body>
+</html>
